@@ -38,6 +38,6 @@ class Handler
 		// http://blog.kotowicz.net/2011/06/file-path-injection-in-php-536-file.html
 		$_FILES[$name]['name'] = basename($_FILES[$name]['name']);
 
-		return new Instance($_FILES[$name]);
+		return new Instance($name);
 	}
 }

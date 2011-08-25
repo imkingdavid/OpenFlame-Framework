@@ -12,6 +12,7 @@
 
 namespace OpenFlame\Framework\Upload;
 use OpenFlame\Framework\Core;
+use OpenFlame\Framework\Upload\MimeType as Type;
 
 /**
  * OpenFlame Framework - File instance
@@ -43,24 +44,24 @@ class Instance
 	public function __construct($name)
 	{
 		// Make sure we got it, there is a chance they will not on some windows systems.
-		if (!class_exists('finfo'))
+		if (!class_exists('\finfo'))
 		{
-			throw new LogicException('Fileinfo extention is not installed. It is required to properly validate images');
+			throw new \LogicException('Fileinfo extention is not installed. It is required to properly validate images');
 		}
 
 		if (!isset($_FILES[$name]) || !sizeof($_FILES[$name]))
 		{
-			throw new LogicException('File to be uploaded does not exist in the post data.');
+			throw new \LogicException('File to be uploaded does not exist in the post data.');
 		}
+
+		$this->files = $_FILES[$name];
 
 		// The advantage here (while not completely foolproof) will examine the
 		// file itself and hunt for magic bytes that indicate a mimetype. It is
 		// still good practice to access all uploaded file via some 
 		// intermediate PHP script to send proper headers.
-		$file = new finfo(FILEINFO_MIME_TYPE);
+		$file = new \finfo(FILEINFO_MIME_TYPE);
 		$this->mimetype = $file->file($this->files['tmp_name']);
-
-		$this->files = $_FILES[$name];
 	}
 
 	/*
@@ -130,7 +131,7 @@ class Instance
 		}
 
 		// Now for the real comparison.
-		if (strpos($this->mimetype), 'image/') !== 0)
+		if (strpos($this->mimetype, 'image/') !== 0)
 		{
 			return false;
 		}

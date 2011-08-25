@@ -54,6 +54,10 @@ class Injector implements \ArrayAccess
 			return new \OpenFlame\Framework\Input\Handler();
 		});
 
+		$this->setInjector('upload', function() {
+			return new \OpenFlame\Framework\Upload\Handler();
+		});
+
 		$this->setInjector('template', function() {
 			return new \OpenFlame\Framework\Twig\Variables();
 		});
