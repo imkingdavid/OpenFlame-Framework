@@ -66,7 +66,7 @@ class Instance
 
 	/*
 	 * Get the filesize
-	 * @param string format - B: Bytes, KiB: Kibibytes, MiB: Mebibytes, GiB: Gibibytes, TiB: Tibibytes
+	 * @param string format - B: Bytes, KiB: Kibibytes, MiB: Mebibytes, GiB: Gibibytes
 	 * @return float 
 	 */
 	public function getSize($format = 'B', $roundDecimal = 2)
@@ -76,10 +76,9 @@ class Instance
 		switch($format)
 		{
 			case 'B':	$divisor = 1;				break;
-			case 'KiB':	$divisor = 1000;			break;
-			case 'MiB':	$divisor = 1000000;			break;
-			case 'GiB':	$divisor = 1000000000; 		break;
-			case 'TiB':	$divisor = 1000000000000;	break;
+			case 'KiB':	$divisor = 1024;			break;
+			case 'MiB':	$divisor = 1048576;			break;
+			case 'GiB':	$divisor = 1073741824; 		break;
 		}
 
 		$val = (float) ($this->files['size'] / $divisor);
