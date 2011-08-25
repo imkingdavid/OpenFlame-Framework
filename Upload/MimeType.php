@@ -33,8 +33,11 @@ class MimeType
 	const APP_PDF	= 'application/pdf';
 	const APP_SOAP	= 'application/soap+xml';
 	const APP_DTD	= 'application/xml-dtd';
+	const APP_SWF	= 'application/x-shockwave-flash';
 	const APP_ZIP	= 'application/zip';
 	const APP_GZ	= 'application/x-gzip';
+	const APP_RAR	= 'application/x-rar-compressed';
+	const APP_TAR	= 'application/x-tar';
 
 	/*
 	 * Audio Types
@@ -65,6 +68,8 @@ class MimeType
 	const TXT_JS			= 'text/javascript';
 	const TXT_PLAIN			= 'text/plain';
 	const TXT_XML			= 'text/xml';
+	const TXT_C				= 'text/x-c';
+	const TXT_PHP			= 'text/x-php';
 
 	/*
 	 * Video Types
@@ -73,4 +78,14 @@ class MimeType
 	const VID_MP4		= 'video/mp4';
 	const VID_QICKTIME	= 'video/quicktime';
 	const VID_WMV		= 'video/x-ms-wmv';
+
+	/*
+	 * 3rd Party Document types
+	 */
+	const DOC_PDF	= 'application/pdf';
+	const DOC_PSD	= 'vnd.adobe.photoshop';
+	const DOC_DOC	= 'application/msword';
+	const DOC_XLS	= 'application/vnd.ms-excel';
+	const DOC_PPT	= 'application/vnd.ms-powerpoint';
+	
 }
