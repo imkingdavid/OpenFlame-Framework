@@ -34,10 +34,57 @@ class Handler
 			return NULL;
 		}
 
-		// I typically hate modifying original data, but this has to be done.
-		// http://blog.kotowicz.net/2011/06/file-path-injection-in-php-536-file.html
-		$_FILES[$name]['name'] = basename($_FILES[$name]['name']);
+		if (substr($name, -2) == '[]')
+		{
+			throw new \LogicException("Can not accept multiple files with the inputFile() method, use inputFiles() instead.");
+		}
 
-		return new Instance($name);
+		return new Instance($_FILES[$name]);
+	}
+
+	/*
+	 * Input multiple files
+	 * The HTML field MUST be named with ending square braces to denote an 
+	 * array.
+	 *
+	 * @param string name - Name of the input fields (must end with [])
+	 */
+	public function inputFiles($name)
+	{
+		if (!isset($_FILES[$name]) || !sizeof($_FILES[$name]) || !is_array($_FILES[$name]['name']))
+		{
+			return NULL;
+		}
+
+		if (substr($name, -2) == '[]')
+		{
+			$name = substr($name, 0, (strlen($name)-2));
+		}
+
+		// Get the list
+		$keys = array();
+		foreach($_FILES[$name]['name'] as $k => $v)
+		{
+			$keys[] = $k;
+		}
+
+		$result = array();
+		foreach($keys as $k)
+		{
+			$file = array();
+			foreach($_FILES[$name] as $field => $val)
+			{
+				$file[$field] = $_FILES[$name][$field][$k];
+			}
+
+			if (empty($file['name']))
+			{
+				continue;
+			}
+
+			$result[] = new Instance($file);
+		}
+
+		return $result;
 	}
 }

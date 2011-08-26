@@ -26,22 +26,44 @@ use OpenFlame\Framework\Upload\MimeType as Type;
 class Instance
 {
 	/*
-	 * @var $_FILEs array
-	 */
-	private $files = array();
-
-	/*
-	 * @var MIME type
+	 * @var string - MIME type
 	 */
 	private $mimetype = '';
 
 	/*
-	 * @param string name - input field name
+	 * @var int - size in bytes
+	 */
+	private $size = 0;
+
+	/*
+	 * @var string - name
+	 */
+	private $name = '';
+
+	/*
+	 * @var string - ext
+	 */
+	private $ext = '';
+
+	/*
+	 * @var string - Temp name as it is stored on the system
+	 */
+	private $tmpName = '';
+
+	/*
+	 * @var int - Error from $_FILES
+	 */
+	private $error = UPLOAD_ERR_OK;
+
+	/*
+	 * @param fileInfo fileInfo - info from $_FILES
 	 * @throws LogicException - This will only happen if they try to create an 
 	 *	instance directly (as this does not handle non-existant files, only the
 	 *	Handler does).
+	 * @throws RuntimeException - When there is an issue with the file upload 
+	 * 	itself.
 	 */
-	public function __construct($name)
+	public function __construct($fileInfo = array())
 	{
 		// Make sure we got it, there is a chance they will not on some windows systems.
 		if (!class_exists('\finfo'))
@@ -49,19 +71,61 @@ class Instance
 			throw new \LogicException('Fileinfo extention is not installed. It is required to properly validate images');
 		}
 
-		if (!isset($_FILES[$name]) || !sizeof($_FILES[$name]))
+		if (!sizeof($fileInfo))
 		{
+			// You should be using the manager to instance this class, we 
+			// should NEVER get here unless they didn't use the manager.
 			throw new \LogicException('File to be uploaded does not exist in the post data.');
 		}
 
-		$this->files = $_FILES[$name];
+		// Check for an error
+		if ($fileInfo['error'])
+		{
+			$error = (int) $fileInfo['error'];
+			switch($error)
+			{
+				case UPLOAD_ERR_INI_SIZE:
+					$message = 'The uploaded file exceeded the upload_max_filesize directive in your php.ini';
+					break;
+				case UPLOAD_ERR_FORM_SIZE:
+					$message = 'Uploaded file exceded the size in the form';
+					break;
+				case UPLOAD_ERR_PARTIAL:
+					$message = 'Only part of the file was able to be uploaded';
+					break;
+				case UPLOAD_ERR_NO_FILE:
+					$message = 'No file was uploaded';
+					break;
+				case UPLOAD_ERR_NO_TMP_DIR:
+					$message = 'A temp directory could not be found';
+					break;
+				case UPLOAD_ERR_CANT_WRITE:
+					$message = 'Could not write to the disk; you may not have permission to do so';
+					break;
+				case UPLOAD_ERR_EXTENSION:
+					$message = 'A PHP extention has stopped this upload. Examine your phpinfo() output to see what might have stopped it';
+					break;
+				default:
+					$message = 'Unknown Error. Sorry this is such a useless error message.';
+					break;
+			}
+
+			throw new \RuntimeException("There was error uploading the file: $message", (int) $error);
+		}
+
+		// http://blog.kotowicz.net/2011/06/file-path-injection-in-php-536-file.html
+		$this->name		= (string) basename($fileInfo['name']);
+		$this->size		= (int) $fileInfo['size'];
+		$this->ext		= substr(strrchr($this->name, '.'), 1);
+		$this->error	= (string) $fileInfo['error'];
+		$this->tmpName	= (string) $fileInfo['tmp_name'];
 
 		// The advantage here (while not completely foolproof) will examine the
-		// file itself and hunt for magic bytes that indicate a mimetype. It is
-		// still good practice to access all uploaded file via some 
-		// intermediate PHP script to send proper headers.
+		// file itself and hunt for magic bytes sequences that indicate a 
+		// mimetype. It is still good practice to access all uploaded file via 
+		// some intermediate PHP script to send proper headers.
 		$file = new \finfo(FILEINFO_MIME_TYPE);
-		$this->mimetype = $file->file($this->files['tmp_name']);
+		$this->mimetype = $file->file($this->tmpName);
 	}
 
 	/*
@@ -81,7 +145,7 @@ class Instance
 			case 'GiB':	$divisor = 1073741824; 		break;
 		}
 
-		$val = (float) ($this->files['size'] / $divisor);
+		$val = (float) ($this->size / $divisor);
 		return round($val, $roundDecimal);
 	}
 
@@ -117,26 +181,13 @@ class Instance
 	 * Check to see if it is an image. 
 	 * This is more or less a shortcut for check the mime type becuase image
 	 * uploading is very common in web applications.
+	 * Checks for .GIF, .PNG, .JPEG/JPG, or .SVG
 	 *
 	 * @return boolean - Is this an image?
 	 */
 	public function isImage()
 	{
-		// If the browser isn't even broadcasting an image mime type, we're not
-		// even going to bother checking anything else.
-		if (strpos($this->files['type'], 'image/') !== 0)
-		{
-			return false;
-		}
-
-		// Now for the real comparison.
-		if (strpos($this->mimetype, 'image/') !== 0)
-		{
-			return false;
-		}
-
-		// If they made it this far, they deserve a beer. 
-		return true;
+		return $this->isMimeType(array(Type::IMG_GIF, Type::IMG_JPEG, Type::IMG_PNG, Type::IMG_SVG)) ? true : false;
 	}
 
 	/*
@@ -146,6 +197,24 @@ class Instance
 	public function getMimeType()
 	{
 		return $this->mimetype;
+	}
+
+	/*
+	 * Get the file extention
+	 * @return string - Extention
+	 */
+	public function getExt()
+	{
+		return $this->ext;
+	}
+
+	/*
+	 * Get the file name
+	 * @return string - file name
+	 */
+	public function getName()
+	{
+		return $this->name;
 	}
 
 	/*
@@ -160,6 +229,13 @@ class Instance
 	 */
 	public function store($callback)
 	{
-		return $callback($this->files);
+		return $callback(array(
+			'name'		=> $this->name,
+			'size'		=> $this->size,
+			'ext'		=> $this->ext,
+			'type'		=> $this->mimetype,
+			'tmp_name'	=> $this->tmpName,
+			'error'		=> $this->error,
+		));
 	}
 }
