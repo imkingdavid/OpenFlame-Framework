@@ -275,7 +275,7 @@ class Instance
 	 * @param mixed $default - Default value
 	 * @return string - Cleaned output
 	 */
-	protected function bindVar($var, $default)
+	protected function bindVar(&$var, $default)
 	{
 		$type = gettype($default);
 		settype($var, $type);
@@ -287,8 +287,6 @@ class Instance
 
 			$var = trim(htmlspecialchars(str_replace(array("\r\n", "\r", "\0"), array("\n", "\n", ''), $var), ENT_COMPAT, 'UTF-8'));
 		}
-
-		return $var;
 	}
 
 	/**
